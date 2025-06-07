@@ -1,9 +1,9 @@
 name: Post Etsy RSS to Facebook Page
 
 on:
-  schedule:
-    - cron: '*/15 * * * *' # every 15 min (you can change this)
-  workflow_dispatch: # manual run option
+  # schedule:
+  #   - cron: '*/15 * * * *' # every 15 min (you can change this)
+  # workflow_dispatch: # manual run option
 
 jobs:
   post-to-facebook:
