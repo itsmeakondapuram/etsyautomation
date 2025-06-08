@@ -2,6 +2,9 @@ name: Post Etsy RSS to Facebook Page
 
 on:
   workflow_dispatch: # manual run option
+  
+permissions:
+  contents: write
 
 jobs:
   post-to-facebook:
