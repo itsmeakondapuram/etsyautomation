@@ -9,15 +9,16 @@ feed_url = 'https://www.etsy.com/shop/thesashedits/rss'  # Replace YOURSHOPNAME
 fb_page_id = os.getenv('FB_PAGE_ID')
 access_token = os.getenv('FB_ACCESS_TOKEN')
 
-def get_last_posted():
+def get_last_posted_links():
     if not os.path.exists(LAST_POSTED_FILE):
-        return None
+        return set()
     with open(LAST_POSTED_FILE, 'r') as file:
-        return file.read().strip()
+        links = file.read().splitlines()
+        return set(links)
 
-def set_last_posted(link):
-    with open(LAST_POSTED_FILE, 'w') as file:
-        file.write(link)
+def add_posted_link(link):
+    with open(LAST_POSTED_FILE, 'a') as file:
+        file.write(link + '\n')
 
 def extract_tags(entry):
     # Etsy RSS puts tags in category
@@ -25,46 +26,49 @@ def extract_tags(entry):
     return tags
 
 def main():
-    # Load last posted link
-    last_posted = get_last_posted()
+    # Load all previously posted links
+    posted_links = get_last_posted_links()
 
     # Parse Etsy RSS Feed
     feed = feedparser.parse(feed_url)
-    latest_entry = feed.entries[0]
-    latest_link = latest_entry.link
-    latest_title = latest_entry.title
-    latest_summary = latest_entry.summary
+    new_posts = []
 
-    # Extract tags
-    tags = extract_tags(latest_entry)
-    hashtags = ' '.join([f"#{tag.replace(' ', '')}" for tag in tags]) if tags else "#Etsy #Handmade #ShopNow"
+    for entry in feed.entries:
+        link = entry.link
+        if link not in posted_links:
+            new_posts.append(entry)
 
-    print(f"Latest post found: {latest_title} → {latest_link}")
-    print(f"Tags/Hashtags: {hashtags}")
+    if not new_posts:
+        print("No new posts. Skipping.")
+        return
 
-    # Check if new post
-    if latest_link != last_posted:
-        print("New post detected! Posting to Facebook...")
+    print(f"Found {len(new_posts)} new post(s)! Posting to Facebook...")
 
-        post_message = f"{latest_title}\n\nCheck it out here 👉 {latest_link}\n\n{hashtags}"
+    for entry in reversed(new_posts):  # oldest first → newest last
+        link = entry.link
+        title = entry.title
+        summary = entry.summary
+
+        tags = extract_tags(entry)
+        hashtags = ' '.join([f"#{tag.replace(' ', '')}" for tag in tags]) if tags else "#Etsy #Handmade #ShopNow"
+
+        post_message = f"{title}\n\nCheck it out here 👉 {link}\n\n{hashtags}"
 
         # Post to Facebook feed with link → clickable image post
         fb_api_url = f"https://graph.facebook.com/{fb_page_id}/feed"
 
         response = requests.post(fb_api_url, data={
             'message': post_message,
-            'link': latest_link,
+            'link': link,
             'access_token': access_token
         })
 
         if response.status_code == 200:
-            print("✅ Post successful!")
-            set_last_posted(latest_link)
+            print(f"✅ Post successful: {title}")
+            add_posted_link(link)
         else:
-            print(f"❌ Failed to post. Status code: {response.status_code}")
+            print(f"❌ Failed to post: {title}. Status code: {response.status_code}")
             print(response.json())
-    else:
-        print("No new post. Skipping.")
 
 if __name__ == "__main__":
     main()
