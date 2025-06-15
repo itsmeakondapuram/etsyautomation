@@ -1,7 +1,12 @@
 name: Post Etsy RSS to Pinterest
 
 on:
-  workflow_dispatch: # manual trigger
+  workflow_dispatch:
+    inputs:
+      post_limit:
+        description: 'How many pins would you like to post?'
+        required: true
+        default: '1'
 
 permissions:
   contents: write
@@ -19,15 +24,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Run Pinterest Posting Script
         env:
           PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
           PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
-        run: python post_to_pinterest.py
+        run: python post_to_pinterest.py ${{ github.event.inputs.post_limit }}
 
       - name: Commit last_posted_pinterest.txt
         run: |
