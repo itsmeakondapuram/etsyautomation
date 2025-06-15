@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # Constants
-LAST_POSTED_FILE = 'last_posted.txt'
+LAST_POSTED_FILE = 'last_posted_facebook.txt'
 feed_url = 'https://www.etsy.com/shop/thesashedits/rss'  # Replace YOURSHOPNAME
 fb_page_id = os.getenv('FB_PAGE_ID')
 access_token = os.getenv('FB_ACCESS_TOKEN')
