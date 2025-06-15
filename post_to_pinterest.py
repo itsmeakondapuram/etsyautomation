@@ -40,7 +40,7 @@ def main():
 
     for entry in reversed(new_posts):
         link = entry.link
-        title = entry.title
+        title = entry.title[:99]  # Pinterest max 100 chars
         summary = entry.summary
 
         # Extract image from summary HTML
@@ -51,7 +51,7 @@ def main():
         tags = extract_tags(entry)
         hashtags = ' '.join([f"#{tag.replace(' ', '')}" for tag in tags]) if tags else "#Etsy #Handmade #ShopNow"
 
-        description = f"{summary}\n\n{hashtags}"
+        description = f"{title} - Editable template on Etsy!\n\n{hashtags}"
 
         if not image_url:
             print(f"❌ Skipping: {title} — no image found.")
@@ -60,7 +60,7 @@ def main():
         payload = {
             "board_id": BOARD_ID,
             "title": title,
-            "description": description,
+            "description": description[:490],
             "alt_text": title,
             "link": link,
             "media_source": {
@@ -74,14 +74,20 @@ def main():
             'Content-Type': 'application/json'
         }
 
+        print("\n📦 Payload:", payload)
+
         response = requests.post(PIN_API_URL, json=payload, headers=headers)
 
         if response.status_code == 201:
             print(f"✅ Pin created: {title}")
             add_posted_link(link)
+            break  # Only post 1 pin per run
         else:
             print(f"❌ Failed to post: {title}. Status code: {response.status_code}")
-            print(response.json())
+            try:
+                print("Response:", response.json())
+            except:
+                print("Raw Response:", response.text)
 
 if __name__ == "__main__":
     main()
