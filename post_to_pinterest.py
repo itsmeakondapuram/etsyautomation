@@ -1,5 +1,6 @@
 # post_to_pinterest.py
 import os
+import sys
 import feedparser
 import requests
 from bs4 import BeautifulSoup
@@ -40,7 +41,10 @@ def extract_price(summary):
     return price_tag.text.strip() if price_tag else ""
 
 def main():
-    post_limit = 1  # fixed to 1 per run
+    try:
+        post_limit = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+    except Exception:
+        post_limit = 1
 
     posted_links = get_last_posted_links()
     feed = feedparser.parse(FEED_URL)
