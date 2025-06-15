@@ -35,11 +35,7 @@ def extract_tags(entry):
     return [tag.term for tag in entry.tags] if 'tags' in entry else []
 
 def main():
-    try:
-        post_limit = int(input("How many pins would you like to create? "))
-    except ValueError:
-        print("❌ Invalid number.")
-        return
+    post_limit = 1  # fixed to 1 per run
 
     posted_links = get_last_posted_links()
     feed = feedparser.parse(FEED_URL)
