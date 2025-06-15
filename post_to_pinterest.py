@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # Constants
-LAST_POSTED_FILE = 'last_posted_facebook.txt'
+LAST_POSTED_FILE = 'last_posted_pinterest.txt'
 FEED_URL = 'https://www.etsy.com/shop/thesashedits/rss'
 BOARD_ID = os.getenv('PINTEREST_BOARD_ID')
 ACCESS_TOKEN = os.getenv('PINTEREST_ACCESS_TOKEN')
