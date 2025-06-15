@@ -34,6 +34,11 @@ def add_posted_link(link):
 def extract_tags(entry):
     return [tag.term for tag in entry.tags] if 'tags' in entry else []
 
+def extract_price(summary):
+    soup = BeautifulSoup(summary, 'html.parser')
+    price_tag = soup.find('span', class_='currency-value')
+    return price_tag.text.strip() if price_tag else ""
+
 def main():
     post_limit = 1  # fixed to 1 per run
 
@@ -57,15 +62,16 @@ def main():
         title = entry.title[:99]  # Pinterest max 100 chars
         summary = entry.summary
 
-        # Extract image from summary HTML
+        # Extract image and price from summary HTML
         soup = BeautifulSoup(summary, 'html.parser')
         image_tag = soup.find('img')
         image_url = image_tag['src'] if image_tag else None
+        price = extract_price(summary)
 
         tags = extract_tags(entry)
         hashtags = ' '.join([f"#{tag.replace(' ', '')}" for tag in tags]) if tags else "#Etsy #Handmade #ShopNow"
 
-        description = f"{title} - Editable template on Etsy!\n\n{hashtags}"
+        description = f"{title} - Editable template on Etsy!\nPrice: {price}\n\n{hashtags}"
 
         if not image_url:
             print(f"❌ Skipping: {title} — no image found.")
