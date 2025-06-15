@@ -9,7 +9,7 @@ LAST_POSTED_FILE = 'last_posted_pinterest.txt'
 FEED_URL = 'https://www.etsy.com/shop/thesashedits/rss'
 BOARD_ID = os.getenv('PINTEREST_BOARD_ID')
 ACCESS_TOKEN = os.getenv('PINTEREST_ACCESS_TOKEN')
-PIN_API_URL = 'https://api.pinterest.com/v5/pins'
+PIN_API_URL = 'https://api-sandbox.pinterest.com/v5/pins'
 
 # Read last posted links from file
 def get_last_posted_links():
