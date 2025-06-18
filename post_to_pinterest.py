@@ -9,8 +9,8 @@ from bs4 import BeautifulSoup
 LAST_POSTED_FILE = 'last_posted_pinterest.txt'
 FEED_URL = 'https://www.etsy.com/shop/thesashedits/rss'
 ACCESS_TOKEN = os.getenv('PINTEREST_ACCESS_TOKEN')
-PIN_API_URL = 'https://api-sandbox.pinterest.com/v5/pins'  # Use sandbox for trial apps
-BOARDS_API_URL = 'https://api-sandbox.pinterest.com/v5/boards'  # Sandbox boards list
+PIN_API_URL = 'https://api.pinterest.com/v5/pins'
+BOARDS_API_URL = 'https://api.pinterest.com/v5/boards'
 
 # Ensure the last posted file exists
 def ensure_last_posted_file():
@@ -40,7 +40,7 @@ def extract_price(summary):
     price_tag = soup.find('span', class_='currency-value')
     return price_tag.text.strip() if price_tag else ""
 
-def get_board_id_by_name(target_name):
+def fetch_boards():
     headers = {
         'Authorization': f'Bearer {ACCESS_TOKEN}',
         'Content-Type': 'application/json'
@@ -48,28 +48,34 @@ def get_board_id_by_name(target_name):
     response = requests.get(BOARDS_API_URL, headers=headers)
     if response.status_code == 200:
         boards = response.json().get('items', [])
-        for board in boards:
-            if board['name'].lower() == target_name.lower():
-                return board['id']
+        if not boards:
+            print("❌ No boards found.")
+            return []
+        print(f"✅ Found {len(boards)} boards.")
+        return boards
     else:
-        print("Failed to fetch boards list.", response.text)
-    return None
+        print("❌ Failed to fetch boards.", response.text)
+    return []
+
+def select_board(boards, post_title):
+    title_keywords = post_title.lower().split()
+    for board in boards:
+        board_name = board['name'].lower()
+        if any(kw in board_name for kw in title_keywords):
+            print(f"Using board: {board['name']} (ID: {board['id']})")
+            return board['id']
+    print("No matching board found, using first available board.")
+    return boards[0]['id']
 
 def main():
     try:
         post_limit = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-        target_board_name = sys.argv[2] if len(sys.argv) > 2 else None
     except Exception:
-        print("Invalid arguments. Usage: python post_to_pinterest.py <post_limit> <board_name>")
+        print("Invalid arguments. Usage: python post_to_pinterest.py <post_limit>")
         return
 
-    if not target_board_name:
-        print("❌ Board name not provided.")
-        return
-
-    board_id = get_board_id_by_name(target_board_name)
-    if not board_id:
-        print(f"❌ Board '{target_board_name}' not found.")
+    boards = fetch_boards()
+    if not boards:
         return
 
     posted_links = get_last_posted_links()
@@ -92,10 +98,6 @@ def main():
         title = entry.title[:99]
         summary = entry.summary
 
-        if 'baby shower' not in title.lower() and 'baby shower' not in summary.lower():
-            print(f"Skipping: {title} (no 'Baby shower' keyword match)")
-            continue
-
         soup = BeautifulSoup(summary, 'html.parser')
         image_tag = soup.find('img')
         image_url = image_tag['src'] if image_tag else None
@@ -110,6 +112,8 @@ def main():
             print(f"❌ Skipping: {title} — no image found.")
             add_posted_link(link)
             continue
+
+        board_id = select_board(boards, title)
 
         payload = {
             "board_id": board_id,
