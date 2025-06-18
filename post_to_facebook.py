@@ -1,74 +1,111 @@
+# post_to_facebook.py
 import os
+import sys
 import feedparser
 import requests
 from bs4 import BeautifulSoup
 
 # Constants
 LAST_POSTED_FILE = 'last_posted_facebook.txt'
-feed_url = 'https://www.etsy.com/shop/thesashedits/rss'  # Replace YOURSHOPNAME
-fb_page_id = os.getenv('FB_PAGE_ID')
-access_token = os.getenv('FB_ACCESS_TOKEN')
+FEED_URL = 'https://www.etsy.com/shop/thesashedits/rss'
+FB_ACCESS_TOKEN = os.getenv('FB_ACCESS_TOKEN')
+FB_API_URL = 'https://graph.facebook.com/v23.0/me/accounts'
+FB_POST_URL_TEMPLATE = 'https://graph.facebook.com/v23.0/{page_id}/feed'
 
-def get_last_posted_links():
+# Ensure the last posted file exists
+def ensure_last_posted_file():
     if not os.path.exists(LAST_POSTED_FILE):
-        return set()
+        with open(LAST_POSTED_FILE, 'w') as file:
+            file.write('')
+
+# Read all posted links from file
+def get_last_posted_links():
+    ensure_last_posted_file()
     with open(LAST_POSTED_FILE, 'r') as file:
-        links = file.read().splitlines()
-        return set(links)
+        return set(file.read().splitlines())
 
+# Save new posted link to file (if not already present)
 def add_posted_link(link):
-    with open(LAST_POSTED_FILE, 'a') as file:
-        file.write(link + '\n')
+    posted = get_last_posted_links()
+    if link not in posted:
+        with open(LAST_POSTED_FILE, 'a') as file:
+            file.write(link + '\n')
 
+# Extract tags from RSS entry
 def extract_tags(entry):
-    # Etsy RSS puts tags in category
-    tags = [tag.term for tag in entry.tags] if 'tags' in entry else []
-    return tags
+    return [tag.term for tag in entry.tags] if 'tags' in entry else []
+
+def extract_price(summary):
+    soup = BeautifulSoup(summary, 'html.parser')
+    price_tag = soup.find('span', class_='currency-value')
+    return price_tag.text.strip() if price_tag else ""
+
+def fetch_page_id():
+    response = requests.get(FB_API_URL, params={"access_token": FB_ACCESS_TOKEN})
+    if response.status_code == 200:
+        data = response.json()
+        pages = data.get("data", [])
+        if not pages:
+            print("❌ No Facebook pages found.")
+            return None
+        page = pages[0]
+        print(f"✅ Using Facebook page: {page['name']} (ID: {page['id']})")
+        return page['id']
+    else:
+        print("❌ Failed to fetch Facebook page ID.", response.text)
+        return None
 
 def main():
-    # Load all previously posted links
+    try:
+        post_limit = int(sys.argv[1]) if len(sys.argv) > 1 else 1
+    except Exception:
+        print("Invalid arguments. Usage: python post_to_facebook.py <post_limit>")
+        return
+
+    page_id = fetch_page_id()
+    if not page_id:
+        return
+
     posted_links = get_last_posted_links()
-
-    # Parse Etsy RSS Feed
-    feed = feedparser.parse(feed_url)
-    new_posts = []
-
-    for entry in feed.entries:
-        link = entry.link
-        if link not in posted_links:
-            new_posts.append(entry)
+    feed = feedparser.parse(FEED_URL)
+    new_posts = [entry for entry in feed.entries if entry.link not in posted_links]
 
     if not new_posts:
         print("No new posts. Skipping.")
         return
 
-    print(f"Found {len(new_posts)} new post(s)! Posting to Facebook...")
+    print(f"Found {len(new_posts)} new post(s)! Posting up to {post_limit} post(s) to Facebook...")
 
-    for entry in reversed(new_posts):  # oldest first → newest last
+    posted_count = 0
+    for entry in reversed(new_posts):
+        if posted_count >= post_limit:
+            break
+
         link = entry.link
         title = entry.title
         summary = entry.summary
-
+        soup = BeautifulSoup(summary, 'html.parser')
+        price = extract_price(summary)
         tags = extract_tags(entry)
         hashtags = ' '.join([f"#{tag.replace(' ', '')}" for tag in tags]) if tags else "#Etsy #Handmade #ShopNow"
+        message = f"{title}\nPrice: {price}\n{link}\n{hashtags}"
 
-        post_message = f"{title}\n\nCheck it out here 👉 {link}\n\n{hashtags}"
-
-        # Post to Facebook feed with link → clickable image post
-        fb_api_url = f"https://graph.facebook.com/{fb_page_id}/feed"
-
-        response = requests.post(fb_api_url, data={
-            'message': post_message,
-            'link': link,
-            'access_token': access_token
-        })
+        response = requests.post(
+            FB_POST_URL_TEMPLATE.format(page_id=page_id),
+            data={
+                'message': message,
+                'access_token': FB_ACCESS_TOKEN
+            }
+        )
 
         if response.status_code == 200:
-            print(f"✅ Post successful: {title}")
+            print(f"✅ Successfully posted: {title}")
             add_posted_link(link)
+            posted_count += 1
         else:
             print(f"❌ Failed to post: {title}. Status code: {response.status_code}")
             print(response.json())
+            add_posted_link(link)
 
 if __name__ == "__main__":
     main()
