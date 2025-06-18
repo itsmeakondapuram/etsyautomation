@@ -8,9 +8,10 @@ from bs4 import BeautifulSoup
 # Constants
 LAST_POSTED_FILE = 'last_posted_pinterest.txt'
 FEED_URL = 'https://www.etsy.com/shop/thesashedits/rss'
-ACCESS_TOKEN = os.getenv('PINTEREST_ACCESS_TOKEN')
+PIN_ACCESS_TOKEN = os.getenv('PINTEREST_PIN_ACCESS_TOKEN')
+BOARD_ACCESS_TOKEN = os.getenv('PINTEREST_BOARD_ACCESS_TOKEN')
 PIN_API_URL = 'https://api-sandbox.pinterest.com/v5/pins'
-BOARDS_API_URL = 'https://api.pinterest.com/v5/boards'
+BOARDS_API_URL = 'https://api-sandbox.pinterest.com/v5/boards'
 
 # Ensure the last posted file exists
 def ensure_last_posted_file():
@@ -42,7 +43,7 @@ def extract_price(summary):
 
 def fetch_boards():
     headers = {
-        'Authorization': f'Bearer {ACCESS_TOKEN}',
+        'Authorization': f'Bearer {BOARD_ACCESS_TOKEN}',
         'Content-Type': 'application/json'
     }
     response = requests.get(BOARDS_API_URL, headers=headers)
@@ -128,7 +129,7 @@ def main():
         }
 
         headers = {
-            'Authorization': f'Bearer {ACCESS_TOKEN}',
+            'Authorization': f'Bearer {PIN_ACCESS_TOKEN}',
             'Content-Type': 'application/json'
         }
 
