@@ -52,7 +52,9 @@ def fetch_boards():
         if not boards:
             print("❌ No boards found.")
             return []
-        print(f"✅ Found {len(boards)} boards.")
+        print(f"✅ Found {len(boards)} board(s):")
+        for board in boards:
+            print(f" - {board['name']} (ID: {board['id']})")
         return boards
     else:
         print("❌ Failed to fetch boards.", response.text)
