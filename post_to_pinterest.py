@@ -109,7 +109,7 @@ def main():
         tags = extract_tags(entry)
         hashtags = ' '.join([f"#{tag.replace(' ', '')}" for tag in tags]) if tags else "#Etsy #Handmade #ShopNow"
 
-        description = f"{title} - Editable template on Etsy!\nPrice: {price}\n\n{hashtags}"
+        description = f"{title} - Editable template on Canva!"
 
         if not image_url:
             print(f"❌ Skipping: {title} — no image found.")
