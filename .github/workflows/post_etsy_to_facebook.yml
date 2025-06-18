@@ -1,8 +1,13 @@
 name: Post Etsy RSS to Facebook Page
 
 on:
-  workflow_dispatch: # manual run option
-  
+  workflow_dispatch:
+    inputs:
+      post_limit:
+        description: 'How many posts would you like to publish?'
+        required: true
+        default: '1'
+
 permissions:
   contents: write
 
@@ -14,25 +19,25 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
-      - name: Run Post Script
+      - name: Run Facebook Posting Script
         env:
           FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
-          FB_PAGE_ACCESS_TOKEN : ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          POST_LIMIT: ${{ github.event.inputs.post_limit }}
         run: python post_to_facebook.py
 
-      - name: Commit last_posted.txt
+      - name: Commit last_posted_facebook.txt
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add last_posted_facebook.txt
-          git commit -m 'Update last posted link' || echo "No changes to commit"
+          git commit -m 'Update last posted Facebook link' || echo "No changes to commit"
           git push
