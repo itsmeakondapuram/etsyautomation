@@ -1,6 +1,8 @@
 name: Post Etsy RSS to Pinterest
 
 on:
+  schedule:
+    - cron: '0 9 * * *'  # Runs every day at 09:00 UTC
   workflow_dispatch:
     inputs:
       post_limit:
