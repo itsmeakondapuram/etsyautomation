@@ -11,7 +11,7 @@ FEED_URL = 'https://www.etsy.com/shop/thesashedits/rss'
 FB_ACCESS_TOKEN = os.getenv('FB_ACCESS_TOKEN')  # User token to fetch page ID
 FB_PAGE_ACCESS_TOKEN = os.getenv('FB_PAGE_ACCESS_TOKEN')  # Page token to post
 FB_API_URL = 'https://graph.facebook.com/v23.0/me/accounts'
-FB_POST_URL_TEMPLATE = 'https://graph.facebook.com/v23.0/{page_id}/feed'
+FB_PHOTO_URL_TEMPLATE = 'https://graph.facebook.com/v23.0/{page_id}/photos'
 
 # Ensure the last posted file exists
 def ensure_last_posted_file():
@@ -40,6 +40,11 @@ def extract_price(summary):
     soup = BeautifulSoup(summary, 'html.parser')
     price_tag = soup.find('span', class_='currency-value')
     return price_tag.text.strip() if price_tag else ""
+
+def extract_image(summary):
+    soup = BeautifulSoup(summary, 'html.parser')
+    image_tag = soup.find('img')
+    return image_tag['src'] if image_tag else None
 
 def fetch_page_id():
     response = requests.get(FB_API_URL, params={"access_token": FB_ACCESS_TOKEN})
@@ -91,17 +96,25 @@ def main():
         summary = entry.summary
         soup = BeautifulSoup(summary, 'html.parser')
         price = extract_price(summary)
+        image_url = extract_image(summary)
         tags = extract_tags(entry)
         hashtags = ' '.join([f"#{tag.replace(' ', '')}" for tag in tags]) if tags else "#Etsy #Handmade #ShopNow"
-        message = f"{title}\nPrice: {price}\n{link}\n{hashtags}"
+        message = f"{title}\nPrice: {price}\n{hashtags}"
 
-        response = requests.post(
-            FB_POST_URL_TEMPLATE.format(page_id=page_id),
-            data={
-                'message': message,
-                'access_token': FB_PAGE_ACCESS_TOKEN
-            }
-        )
+        if image_url:
+            post_url = FB_PHOTO_URL_TEMPLATE.format(page_id=page_id)
+            response = requests.post(
+                post_url,
+                data={
+                    'url': image_url,
+                    'caption': message,
+                    'link': link,
+                    'access_token': FB_PAGE_ACCESS_TOKEN
+                }
+            )
+        else:
+            print(f"❌ No image found for {title}, skipping image post.")
+            continue
 
         if response.status_code == 200:
             print(f"✅ Successfully posted: {title}")
