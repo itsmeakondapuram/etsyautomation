@@ -9,8 +9,8 @@ from bs4 import BeautifulSoup
 LAST_POSTED_FILE = 'last_posted_pinterest.txt'
 FEED_URL = 'https://www.etsy.com/shop/thesashedits/rss'
 ACCESS_TOKEN = os.getenv('PINTEREST_ACCESS_TOKEN')
-PIN_API_URL = 'https://api.pinterest.com/v5/pins'
-BOARDS_API_URL = 'https://api.pinterest.com/v5/boards'
+PIN_API_URL = 'https://api-sandbox.pinterest.com/v5/pins'
+BOARDS_API_URL = 'https://api-sandbox.pinterest.com/v5/boards'
 
 # Ensure the last posted file exists
 def ensure_last_posted_file():
