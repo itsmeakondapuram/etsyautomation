@@ -32,15 +32,6 @@ def add_posted_link(link):
         with open(LAST_POSTED_FILE, 'a') as file:
             file.write(link + '\n')
 
-# Extract tags from RSS entry
-def extract_tags(entry):
-    return [tag.term for tag in entry.tags] if 'tags' in entry else []
-
-def extract_price(summary):
-    soup = BeautifulSoup(summary, 'html.parser')
-    price_tag = soup.find('span', class_='currency-value')
-    return price_tag.text.strip() if price_tag else ""
-
 def extract_image(summary):
     soup = BeautifulSoup(summary, 'html.parser')
     image_tag = soup.find('img')
@@ -62,11 +53,7 @@ def fetch_page_id():
         return None
 
 def main():
-    try:
-        post_limit = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-    except Exception:
-        print("Invalid arguments. Usage: python post_to_facebook.py <post_limit>")
-        return
+    post_limit = int(os.getenv("POST_LIMIT", "1"))
 
     page_id = fetch_page_id()
     if not page_id:
@@ -94,12 +81,8 @@ def main():
         link = entry.link
         title = entry.title
         summary = entry.summary
-        soup = BeautifulSoup(summary, 'html.parser')
-        price = extract_price(summary)
         image_url = extract_image(summary)
-        tags = extract_tags(entry)
-        hashtags = ' '.join([f"#{tag.replace(' ', '')}" for tag in tags]) if tags else "#Etsy #Handmade #ShopNow"
-        message = f"{title}\nPrice: {price}\n{hashtags}"
+        message = f"{title}"
 
         if image_url:
             post_url = FB_PHOTO_URL_TEMPLATE.format(page_id=page_id)
