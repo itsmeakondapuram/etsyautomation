@@ -58,10 +58,9 @@ def get_board_id_by_name(target_name):
 def main():
     try:
         post_limit = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-        target_word = sys.argv[2] if len(sys.argv) > 2 else None
-        target_board_name = sys.argv[3] if len(sys.argv) > 3 else None
+        target_board_name = sys.argv[2] if len(sys.argv) > 2 else None
     except Exception:
-        print("Invalid arguments. Usage: python post_to_pinterest.py <post_limit> <target_word> <board_name>")
+        print("Invalid arguments. Usage: python post_to_pinterest.py <post_limit> <board_name>")
         return
 
     if not target_board_name:
@@ -93,8 +92,8 @@ def main():
         title = entry.title[:99]
         summary = entry.summary
 
-        if target_word and (target_word.lower() not in title.lower() and target_word.lower() not in summary.lower()):
-            print(f"Skipping: {title} (no target word match)")
+        if 'baby shower' not in title.lower() and 'baby shower' not in summary.lower():
+            print(f"Skipping: {title} (no 'Baby shower' keyword match)")
             continue
 
         soup = BeautifulSoup(summary, 'html.parser')
