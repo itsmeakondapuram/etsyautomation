@@ -8,7 +8,8 @@ from bs4 import BeautifulSoup
 # Constants
 LAST_POSTED_FILE = 'last_posted_facebook.txt'
 FEED_URL = 'https://www.etsy.com/shop/thesashedits/rss'
-FB_ACCESS_TOKEN = os.getenv('FB_ACCESS_TOKEN')
+FB_ACCESS_TOKEN = os.getenv('FB_ACCESS_TOKEN')  # User token to fetch page ID
+FB_PAGE_ACCESS_TOKEN = os.getenv('FB_PAGE_ACCESS_TOKEN')  # Page token to post
 FB_API_URL = 'https://graph.facebook.com/v23.0/me/accounts'
 FB_POST_URL_TEMPLATE = 'https://graph.facebook.com/v23.0/{page_id}/feed'
 
@@ -66,6 +67,10 @@ def main():
     if not page_id:
         return
 
+    if not FB_PAGE_ACCESS_TOKEN:
+        print("❌ FB_PAGE_ACCESS_TOKEN environment variable is required to post.")
+        return
+
     posted_links = get_last_posted_links()
     feed = feedparser.parse(FEED_URL)
     new_posts = [entry for entry in feed.entries if entry.link not in posted_links]
@@ -94,7 +99,7 @@ def main():
             FB_POST_URL_TEMPLATE.format(page_id=page_id),
             data={
                 'message': message,
-                'access_token': FB_ACCESS_TOKEN
+                'access_token': FB_PAGE_ACCESS_TOKEN
             }
         )
 
